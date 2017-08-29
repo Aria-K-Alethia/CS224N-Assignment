@@ -1,3 +1,4 @@
+#! python2
 import numpy as np
 
 
@@ -31,12 +32,19 @@ def softmax(x):
     if len(x.shape) > 1:
         # Matrix
         ### YOUR CODE HERE
-        raise NotImplementedError
+        softmax1 = lambda x: np.exp(x - np.max(x))
+        softmax2 = lambda x: 1.0 / np.sum(x)
+        x = np.apply_along_axis(softmax1,1,x)
+        factor = np.apply_along_axis(softmax2,1,x)
+       	factor = factor.reshape(factor.shape[0],1)
+       	x = x * factor
         ### END YOUR CODE
     else:
         # Vector
         ### YOUR CODE HERE
-        raise NotImplementedError
+        x = np.exp(x - np.max(x))
+        factor = 1.0 / np.sum(x)
+        x = x * factor
         ### END YOUR CODE
 
     assert x.shape == orig_shape

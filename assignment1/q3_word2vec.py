@@ -15,7 +15,8 @@ def normalizeRows(x):
     """
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    normalize = lambda x:x / np.sqrt(np.sum(x**2))
+    x = np.apply_along_axis(normalize,1,x)
     ### END YOUR CODE
 
     return x
@@ -58,7 +59,15 @@ def softmaxCostAndGradient(predicted, target, outputVectors, dataset):
     """
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    #get y,which is prediction of target
+    y = softmax(np.dot(outputVectors,predicted)) #do not need to transpose outputVectors
+    #get cost,which is -log(y[target])
+    cost = -np.log(y[target])
+    #get gradPred
+    y[target] -= 1
+    gradPred = np.dot(outputVectors.T,y) #need to transpose
+    #get grad
+    grad = np.outer(y,predicted) 
     ### END YOUR CODE
 
     return cost, gradPred, grad
@@ -96,7 +105,22 @@ def negSamplingCostAndGradient(predicted, target, outputVectors, dataset,
     indices.extend(getNegativeSamples(target, dataset, K))
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    #init
+    u0 = outputVectors[target]
+    grad = np.zeros(outputVectors.shape)
+    gradPred = np.zeros(predicted.shape)
+    #get value related to positive sample
+    temp = sigmoid(np.dot(u0,predicted))
+    cost = -np.log(temp)
+    gradPred += (temp - 1)*u0
+    grad[target] += (temp -1)*predicted
+    #get value related to negative samples
+    for k in indices[1:]:
+        uk = outputVectors[k]
+        temp = sigmoid(np.dot(uk,predicted))
+        cost -= np.log(1-temp)
+        gradPred += temp*uk
+        grad[k] += temp*predicted
     ### END YOUR CODE
 
     return cost, gradPred, grad
@@ -109,7 +133,7 @@ def skipgram(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
     Implement the skip-gram model in this function.
 
     Arguments:
-    currrentWord -- a string of the current center word
+    currentWord -- a string of the current center word
     C -- integer, context size
     contextWords -- list of no more than 2*C strings, the context words
     tokens -- a dictionary that maps words to their indices in
@@ -131,7 +155,15 @@ def skipgram(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
     gradOut = np.zeros(outputVectors.shape)
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    preIdx = tokens[currentWord]
+    predicted = inputVectors[preIdx]
+
+    for word in contextWords:
+        target = tokens[word]
+        cost_temp,gradPred,grad = word2vecCostAndGradient(predicted,target,outputVectors,dataset)
+        cost += cost_temp
+        gradIn[preIdx] += gradPred
+        gradOut += grad
     ### END YOUR CODE
 
     return cost, gradIn, gradOut
@@ -155,7 +187,18 @@ def cbow(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
     gradOut = np.zeros(outputVectors.shape)
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    #def softmaxCostAndGradient(predicted, target, outputVectors, dataset):
+    #step 1: get the predicted vector,which will be the mean of the sum of the context vector
+    context_indices = [tokens[word] for word in contextWords]
+    predicted = np.sum(inputVectors[context_indices],axis = 0)
+    #predicted /= float(len(contextWords))
+
+    #step 2:call the function and get cost and gradient of U and V
+    target = tokens[currentWord]
+    cost,gradPred,gradOut = word2vecCostAndGradient(predicted,target,outputVectors,dataset)
+    #step 3:attribute the gradPred to the input vector
+    for i in context_indices:
+        gradIn[i] += gradPred
     ### END YOUR CODE
 
     return cost, gradIn, gradOut
