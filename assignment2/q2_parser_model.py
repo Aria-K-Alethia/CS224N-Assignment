@@ -57,9 +57,10 @@ class ParserModel(Model):
         self.input_placeholder = tf.placeholder(tf.int32,[None,self.config.n_features])
         self.labels_placeholder = tf.placeholder(tf.float32,[None,self.config.n_classes])
         self.dropout_placeholder = tf.placeholder(tf.float32)
+        self.reg_placeholder = tf.placeholder(tf.float32)
         ### END YOUR CODE
 
-    def create_feed_dict(self, inputs_batch, labels_batch=None, dropout=1):
+    def create_feed_dict(self, inputs_batch, labels_batch=None, dropout=1,reg = 10e-7):
         """Creates the feed_dict for the dependency parser.
 
         A feed_dict takes the form of:
@@ -83,7 +84,8 @@ class ParserModel(Model):
         """
         ### YOUR CODE HERE
         feed_dict = {self.input_placeholder:inputs_batch,\
-                     self.dropout_placeholder:dropout}
+                     self.dropout_placeholder:dropout,\
+                     self.reg_placeholder:reg}
         if labels_batch is not None:
             feed_dict[self.labels_placeholder] = labels_batch
         ### END YOUR CODE
@@ -142,7 +144,7 @@ class ParserModel(Model):
         ### YOUR CODE HERE
         initializer = xavier_weight_init()
         with tf.variable_scope("transformation"):
-            W = initializer([self.config.embed_size * self.config.n_features , self.config.hidden_size])
+            self.W = W = initializer([self.config.embed_size * self.config.n_features , self.config.hidden_size])
             U = initializer([self.config.hidden_size,self.config.n_classes])
             b1 = tf.Variable(tf.random_uniform([self.config.hidden_size]))
             b2 = tf.Variable(tf.random_uniform([self.config.n_classes]))
@@ -170,6 +172,7 @@ class ParserModel(Model):
         """
         ### YOUR CODE HERE
         loss = tf.nn.softmax_cross_entropy_with_logits(logits = pred,labels = self.labels_placeholder)
+        loss += self.reg_placeholder * tf.nn.l2_loss(self.W)
         loss = tf.reduce_mean(loss)
         ### END YOUR CODE
         return loss
